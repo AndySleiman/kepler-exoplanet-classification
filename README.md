@@ -27,7 +27,7 @@ We classify each KOI as a real planet or a false positive using **only measureme
 
 Failure mitigation: deferring the 7% least certain objects to human vetters halves the error rate on the rest (6.7% -> 3.9%, validation); threshold/calibration/re-weighting/specialist models did not help. The neural network and ensemble add at most +0.004 validation PR-AUC (nothing on test) at 5-37x the cost, so XGBoost is the recommended model.
 
-Primary model on test: ROC-AUC 0.982, F1 0.926, recall 0.857 at 95% precision, 87 errors on 1,546 objects. XGBoost alone ties the ensemble on test. TabPFN could not be run in our environment (gated weights); see `final/run_tabpfn_colab.py`.
+Primary model on test: ROC-AUC 0.982, F1 0.926, recall 0.81 at 95.6% precision (threshold 0.80 fixed on validation), 87 errors on 1,546 objects. XGBoost alone ties the ensemble on test. TabPFN could not be run in our environment (gated weights); see `final/run_tabpfn_colab.py`.
 Full report: `report/final_report.pdf` (source: `report/final_report.tex`). Ranked CANDIDATE list: `results/candidate_ranking.csv`.
 
 ## Repository structure

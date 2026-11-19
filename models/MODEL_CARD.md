@@ -5,7 +5,7 @@
 **Task:** CONFIRMED (1) vs FALSE POSITIVE (0) Kepler Objects of Interest.
 **Inputs:** the 12 columns `koi_period, koi_duration, koi_depth, koi_impact, koi_model_snr, koi_prad, koi_teq, koi_insol, koi_steff, koi_slogg, koi_srad, koi_kepmag`; five engineered features are computed inside the pipeline. No vetting outputs (`koi_score`, `koi_fpflag_*`, dispositions) are used.
 
-**Performance (ensemble trained on the 80% train part, single evaluation on the held-out 20% test set, grouped by star):** PR-AUC 0.968 (95% CI 0.954-0.979), ROC-AUC 0.982, F1 0.926 at threshold 0.5, recall 0.857 at 95% precision. Thresholds chosen on validation: 0.40 (F1-optimal), 0.80 (95% precision; gave 95.6% precision and 81% recall on test).
+**Performance (ensemble trained on the 80% train part, single evaluation on the held-out 20% test set, grouped by star):** PR-AUC 0.968 (95% CI 0.954-0.979), ROC-AUC 0.982, F1 0.926 at threshold 0.5. Thresholds chosen on validation: 0.40 (F1-optimal), 0.80 (95% precision; gave 95.6% precision and 81% recall on test).
 
 **Use:** `python predict.py data/kepler_cumulative.csv` (needs `final/common.py` and `final/torch_model.py`, which `predict.py` adds to the path).
 
