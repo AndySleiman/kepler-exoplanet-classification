@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+final/cache/
+__pycache__/
+notebooks/cache/

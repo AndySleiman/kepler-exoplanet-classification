@@ -1,28 +1,14 @@
 # Model card
 
-| | XGBoost (main model) | MLP |
-|---|---|---|
-| File | `xgboost_pipeline.joblib` | `mlp_pipeline.joblib` |
-| Validation PR-AUC (5-fold grouped CV) | 0.957 ± 0.003 | 0.952 ± 0.003 |
-| Recall at 95% precision | 0.748 | 0.739 |
-| Size | 400 trees, depth 8 | 3 hidden layers (256, 128, 64), 44,545 parameters |
+**Final model:** equal-weight average of `final_xgboost.joblib` (XGBoost, 200 trees, depth 6) and `final_resmlp.joblib` (PyTorch residual MLP, 5-seed ensemble, 48,965 weights). Both are full scikit-learn Pipelines (log10 + engineered features -> median imputation -> [scaling] -> model) refit on all 7,587 labelled objects with hyper-parameters frozen on validation data.
 
 **Task:** CONFIRMED (1) vs FALSE POSITIVE (0) Kepler Objects of Interest.
+**Inputs:** the 12 columns `koi_period, koi_duration, koi_depth, koi_impact, koi_model_snr, koi_prad, koi_teq, koi_insol, koi_steff, koi_slogg, koi_srad, koi_kepmag`; five engineered features are computed inside the pipeline. No vetting outputs (`koi_score`, `koi_fpflag_*`, dispositions) are used.
 
-**Inputs (12 features):** `koi_period, koi_duration, koi_depth, koi_impact, koi_model_snr, koi_prad, koi_teq, koi_insol, koi_steff, koi_slogg, koi_srad, koi_kepmag`.
-No vetting outputs (`koi_score`, `koi_fpflag_*`, dispositions) are used.
+**Performance (ensemble trained on the 80% train part, single evaluation on the held-out 20% test set, grouped by star):** PR-AUC 0.968 (95% CI 0.954-0.979), ROC-AUC 0.982, F1 0.926 at threshold 0.5, recall 0.857 at 95% precision. Thresholds chosen on validation: 0.40 (F1-optimal), 0.80 (95% precision; gave 95.6% precision and 81% recall on test).
 
-**Each file is a full scikit-learn Pipeline** (log10 transform → median imputation → [scaling] → model), so it takes raw table columns.
+**Use:** `python predict.py data/kepler_cumulative.csv` (needs `final/common.py` and `final/torch_model.py`, which `predict.py` adds to the path).
 
-**Load it:**
-```python
-import joblib
-from predict import log_transform   # needed so the saved pipeline can find its transform
-model = joblib.load("models/xgboost_pipeline.joblib")
-probs = model.predict_proba(df[FEATS])[:, 1]
-```
-Or simply: `python predict.py data/kepler_cumulative.csv`
+**Known weaknesses:** weak signals (SNR 10-20), Earth-sized planets, rare giant/grazing/hot-star planets (usually predicted as false positives), objects with missing measurements (almost all false positives in the catalogue), and false positives that closely mimic planets. Candidate scores are a prioritisation aid, not confirmation.
 
-**Known weaknesses:** low-SNR signals (SNR 10–20), small false positives that look like planets, and rare-planet regions (radius > 15 Earth radii, grazing transits, hot stars, rows with missing values). See the notebook, Section 7.
-
-**Status:** progress-report version (Nov 6). Not yet evaluated on the held-out test set.
+`xgboost_pipeline.joblib` and `mlp_pipeline.joblib` are the progress-report models (12 features, previous data snapshot) kept for reference.
