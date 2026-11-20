@@ -166,7 +166,19 @@ The 95\%-precision threshold chosen on validation transfers well: it gives 95.6\
 \end{figure}
 
 \subsection{Reproduction on a fresh kernel}
-The main tables and figures retain the original project run. We repeated the notebook under Python 3.12 using the repository data snapshot and the same grouped split and tuning spaces. The rerun again selected the ensemble on development data (average precision 0.9648, versus 0.9651 originally). Test average precision was 0.9680 for XGBoost and 0.9695 for the ensemble, versus 0.9682 for both models to four decimal places in the original run. The XGBoost search selected different hyperparameters in the rerun, so this is a reproduction of the workflow and its broad conclusion. The pinned package versions describe the rerun environment. The sensitivity experiments below use the settings selected in the rerun.
+The main tables and figures retain the original project run. We ran the notebook from a fresh Python 3.12 kernel using the same dataset snapshot, star-grouped split, and tuning spaces. The rerun again selected the ensemble on development data (average precision 0.9648, versus 0.9651 originally). Table~\ref{tab:reproduction} compares the ensemble's test results. XGBoost alone scored 0.9680 average precision on the rerun versus 0.9682 originally. The XGBoost search selected different hyperparameters, and the rerun produced six more ensemble errors at the default threshold. The rerun's configuration and full metrics are under \path{results/reproduction/}. The pinned package versions describe the rerun environment, and the sensitivity experiments use the rerun settings.
+
+
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}lrrr@{}}\toprule
+Ensemble test metric & Original run & Notebook rerun & Change \\\midrule
+Average precision (PR-AUC) & 0.9682 & 0.9695 & +0.0013 \\
+ROC-AUC & 0.9819 & 0.9823 & +0.0004 \\
+F1 at threshold 0.5 & 0.9261 & 0.9207 & -0.0054 \\
+Errors out of 1,546 at threshold 0.5 & 87 & 93 & +6 \\\bottomrule
+\end{tabular}
+\caption{Original and fresh-kernel results on the same held-out test objects.}\label{tab:reproduction}
+\end{table}
 
 \subsection{Feature importance (SHAP)}
 We computed TreeSHAP values \citep{lundberg2017,lundberg2020} for the XGBoost model (Figure~\ref{fig:shap}). By mean $|$SHAP$|$ (log-odds) the most important features are planet radius (1.14), stellar density (0.82, new), SNR (0.71) and period (0.62), followed by the new \code{depth\_consistency} and \code{duration\_ratio} (both 0.35). Large planet radii, high stellar density and low SNR push predictions strongly towards FALSE POSITIVE. Permuting the 12 raw inputs agrees on the top of the ranking (radius, period, SNR, duration cause the biggest PR-AUC drops; $0.20$, $0.13$, $0.10$, $0.10$). Two of the five new features are among the six most important, which is consistent with their measured gain.
@@ -321,19 +333,19 @@ The distribution is bimodal: 886 candidates score below 0.1, 562 score at least 
 
 %--------------------------------------------------------------------
 \begin{thebibliography}{99}\small
-\bibitem[Akeson et al.(2013)]{akeson2013} R.~L. Akeson et al. The NASA Exoplanet Archive: Data and Tools for Exoplanet Research. \emph{PASP}, 125:989, 2013.
-\bibitem[Armstrong et al.(2021)]{armstrong2021} D.~J. Armstrong et al. Exoplanet validation with machine learning: 50 new validated Kepler planets. \emph{MNRAS}, 504:5327, 2021.
-\bibitem[Borucki et al.(2010)]{borucki2010} W.~J. Borucki et al. Kepler Planet-Detection Mission: Introduction and First Results. \emph{Science}, 327:977, 2010.
-\bibitem[Chen and Guestrin(2016)]{chen2016} T.~Chen and C.~Guestrin. XGBoost: A Scalable Tree Boosting System. \emph{KDD}, 2016.
-\bibitem[Coughlin et al.(2016)]{coughlin2016} J.~L. Coughlin et al. Planetary Candidates Observed by Kepler. VII. The First Fully Uniform Catalog Based on the Entire 48-month Data Set (Q1--Q17 DR24). \emph{ApJS}, 224:12, 2016.
-\bibitem[Hollmann et al.(2025)]{hollmann2025} N.~Hollmann et al. Accurate predictions on small data with a tabular foundation model. \emph{Nature}, 637:319, 2025.
-\bibitem[Loshchilov and Hutter(2019)]{loshchilov2019} I.~Loshchilov and F.~Hutter. Decoupled Weight Decay Regularization. \emph{ICLR}, 2019.
-\bibitem[Lundberg and Lee(2017)]{lundberg2017} S.~M. Lundberg and S.-I. Lee. A Unified Approach to Interpreting Model Predictions. \emph{NeurIPS}, 2017.
-\bibitem[Lundberg et al.(2020)]{lundberg2020} S.~M. Lundberg et al. From local explanations to global understanding with explainable AI for trees. \emph{Nature Machine Intelligence}, 2:56, 2020.
-\bibitem[Paszke et al.(2019)]{paszke2019} A.~Paszke et al. PyTorch: An Imperative Style, High-Performance Deep Learning Library. \emph{NeurIPS}, 2019.
-\bibitem[Pedregosa et al.(2011)]{pedregosa2011} F.~Pedregosa et al. Scikit-learn: Machine Learning in Python. \emph{JMLR}, 12:2825, 2011.
-\bibitem[Shallue and Vanderburg(2018)]{shallue2018} C.~J. Shallue and A.~Vanderburg. Identifying Exoplanets with Deep Learning: A Five-planet Resonant Chain around Kepler-80 and an Eighth Planet around Kepler-90. \emph{AJ}, 155:94, 2018.
-\bibitem[Smith and Topin(2019)]{smith2019} L.~N. Smith and N.~Topin. Super-convergence: Very fast training of neural networks using large learning rates. \emph{Proc.\ SPIE}, 11006, 2019.
-\bibitem[Thompson et al.(2018)]{thompson2018} S.~E. Thompson et al. Planetary Candidates Observed by Kepler. VIII. A Fully Automated Catalog with Measured Completeness and Reliability Based on Data Release 25. \emph{ApJS}, 235:38, 2018.
+\bibitem[Akeson et al.(2013)]{akeson2013} R.~L. Akeson et al. The NASA Exoplanet Archive: Data and Tools for Exoplanet Research. \emph{Publications of the Astronomical Society of the Pacific}, 125(930):989--999, 2013. \href{https://doi.org/10.1086/672273}{DOI}.
+\bibitem[Armstrong et al.(2021)]{armstrong2021} D.~J. Armstrong et al. Exoplanet validation with machine learning: 50 new validated Kepler planets. \emph{Monthly Notices of the Royal Astronomical Society}, 504(4):5327--5344, 2021. \href{https://doi.org/10.1093/mnras/staa2498}{DOI}.
+\bibitem[Borucki et al.(2010)]{borucki2010} W.~J. Borucki et al. Kepler Planet-Detection Mission: Introduction and First Results. \emph{Science}, 327(5968):977--980, 2010. \href{https://doi.org/10.1126/science.1185402}{DOI}.
+\bibitem[Chen and Guestrin(2016)]{chen2016} T.~Chen and C.~Guestrin. XGBoost: A Scalable Tree Boosting System. In \emph{Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining}, pp.~785--794, 2016. \href{https://doi.org/10.1145/2939672.2939785}{DOI}.
+\bibitem[Coughlin et al.(2016)]{coughlin2016} J.~L. Coughlin et al. Planetary Candidates Observed by Kepler. VII. The First Fully Uniform Catalog Based on the Entire 48-month Data Set (Q1--Q17 DR24). \emph{The Astrophysical Journal Supplement Series}, 224(1), article 12, 2016. \href{https://doi.org/10.3847/0067-0049/224/1/12}{DOI}.
+\bibitem[Hollmann et al.(2025)]{hollmann2025} N.~Hollmann et al. Accurate predictions on small data with a tabular foundation model. \emph{Nature}, 637:319--326, 2025. \href{https://doi.org/10.1038/s41586-024-08328-6}{DOI}.
+\bibitem[Loshchilov and Hutter(2019)]{loshchilov2019} I.~Loshchilov and F.~Hutter. Decoupled Weight Decay Regularization. \emph{ICLR}, 2019. \href{https://openreview.net/pdf?id=Bkg6RiCqY7}{Paper}.
+\bibitem[Lundberg and Lee(2017)]{lundberg2017} S.~M. Lundberg and S.-I. Lee. A Unified Approach to Interpreting Model Predictions. \emph{Advances in Neural Information Processing Systems}, 30, 2017. \href{https://proceedings.neurips.cc/paper_files/paper/2017/hash/8a20a8621978632d76c43dfd28b67767-Abstract.html}{Paper}.
+\bibitem[Lundberg et al.(2020)]{lundberg2020} S.~M. Lundberg et al. From local explanations to global understanding with explainable AI for trees. \emph{Nature Machine Intelligence}, 2:56--67, 2020. \href{https://doi.org/10.1038/s42256-019-0138-9}{DOI}.
+\bibitem[Paszke et al.(2019)]{paszke2019} A.~Paszke et al. PyTorch: An Imperative Style, High-Performance Deep Learning Library. \emph{Advances in Neural Information Processing Systems}, 32, 2019. \href{https://proceedings.neurips.cc/paper_files/paper/2019/hash/bdbca288fee7f92f2bfa9f7012727740-Abstract.html}{Paper}.
+\bibitem[Pedregosa et al.(2011)]{pedregosa2011} F.~Pedregosa et al. Scikit-learn: Machine Learning in Python. \emph{Journal of Machine Learning Research}, 12:2825--2830, 2011. \href{https://www.jmlr.org/papers/v12/pedregosa11a.html}{Paper}.
+\bibitem[Shallue and Vanderburg(2018)]{shallue2018} C.~J. Shallue and A.~Vanderburg. Identifying Exoplanets with Deep Learning: A Five-planet Resonant Chain around Kepler-80 and an Eighth Planet around Kepler-90. \emph{The Astronomical Journal}, 155(2), article 94, 2018. \href{https://doi.org/10.3847/1538-3881/aa9e09}{DOI}.
+\bibitem[Smith and Topin(2019)]{smith2019} L.~N. Smith and N.~Topin. Super-convergence: Very fast training of neural networks using large learning rates. In \emph{Artificial Intelligence and Machine Learning for Multi-Domain Operations Applications}, Proceedings of SPIE, vol.~11006, article 1100612, 2019. \href{https://doi.org/10.1117/12.2520589}{DOI}.
+\bibitem[Thompson et al.(2018)]{thompson2018} S.~E. Thompson et al. Planetary Candidates Observed by Kepler. VIII. A Fully Automated Catalog with Measured Completeness and Reliability Based on Data Release 25. \emph{The Astrophysical Journal Supplement Series}, 235(2), article 38, 2018. \href{https://doi.org/10.3847/1538-4365/aab4f9}{DOI}.
 \end{thebibliography}
 \end{document}
