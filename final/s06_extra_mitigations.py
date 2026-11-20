@@ -43,6 +43,8 @@ for d in [2, 3, 4, 6, 8]:
     pipe = Pipeline(preprocessing(False, True) + [("m", DecisionTreeClassifier(max_depth=d, min_samples_leaf=20, random_state=RS))])
     p = cross_val_predict(pipe, tr[FEATS], y, cv=splits, method="predict_proba")[:, 1]
     rows.append({"model": f"decision tree depth {d}", "readable size": f"{2 ** d} leaves", "PR-AUC": average_precision_score(y, p), "Recall@P95": recall_at_precision(y, p)})
+# Exploratory: the SHAP ranking and imputer see the entire development partition.
+# A fold-independent estimate would fit both again inside each training fold.
 imp = pd.read_csv("../results/shap_importance.csv", index_col=0).iloc[:, 0]
 for k in [3, 5, 8]:
     top = list(imp.index[:k]); raw = [f for f in top if f in FEATS]

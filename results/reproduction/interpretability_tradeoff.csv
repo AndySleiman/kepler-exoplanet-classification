@@ -1,0 +1,11 @@
+model,readable size,PR-AUC,Recall@P95
+decision tree depth 2,4 leaves,0.6051710665350053,0.0
+decision tree depth 3,8 leaves,0.7033700832657153,0.0
+decision tree depth 4,16 leaves,0.7675042867679717,0.0
+decision tree depth 6,64 leaves,0.8640055855945965,0.0
+decision tree depth 8,256 leaves,0.8906445559579208,0.0
+XGBoost on top-3 SHAP features,3 features,0.8462593536610761,0.07820453493752892
+XGBoost on top-5 SHAP features,5 features,0.9398758510599461,0.5941693660342434
+XGBoost on top-8 SHAP features,8 features,0.9538813997978822,0.7394724664507173
+XGBoost (17 features),200 trees,0.9606906111295774,0.7690883850069412
+Ensemble XGB + ResMLP,black box,0.9648336679556053,0.7931513188338732

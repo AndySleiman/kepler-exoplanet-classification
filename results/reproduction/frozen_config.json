@@ -1,0 +1,45 @@
+{
+  "primary_model": "Equal-weight average of XGBoost and PyTorch ResMLP (17 features)",
+  "features": [
+    "koi_period",
+    "koi_duration",
+    "koi_depth",
+    "koi_impact",
+    "koi_model_snr",
+    "koi_prad",
+    "koi_teq",
+    "koi_insol",
+    "koi_steff",
+    "koi_slogg",
+    "koi_srad",
+    "koi_kepmag",
+    "depth_consistency",
+    "duration_ratio",
+    "implied_noise",
+    "star_density",
+    "rp_over_rs"
+  ],
+  "threshold_default": 0.5,
+  "threshold_F1_optimal_on_validation": 0.3555489778518677,
+  "threshold_95pct_precision_on_validation": 0.8068511486053467,
+  "val_PR_AUC": 0.9648336679556053,
+  "xgb_params": {
+    "m__subsample": 0.85,
+    "m__reg_lambda": 1,
+    "m__n_estimators": 400,
+    "m__min_child_weight": 1,
+    "m__max_depth": 8,
+    "m__learning_rate": 0.02,
+    "m__colsample_bytree": 0.6
+  },
+  "resmlp_params": {
+    "m__width": 64,
+    "m__weight_decay": 0.0001,
+    "m__n_blocks": 1,
+    "m__lr": 0.01,
+    "m__epochs": 40,
+    "m__dropout": 0.3
+  },
+  "split_seed": 42,
+  "selection_rule": "highest 5-fold grouped-CV PR-AUC on the 80% train/validation part; test set not used"
+}

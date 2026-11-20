@@ -1,6 +1,6 @@
 """Step 7: how sensitive are the conclusions to the split and the evaluation design?
 (A) 5 repeats of grouped 5-fold CV with different fold seeds (train/validation part only);
-(B) 10 independent grouped 80/20 splits of ALL labelled data, frozen hyper-parameters, models refit on each split;
+(B) Grouped 80/20 splits within development of the development partition, frozen hyper-parameters, models refit on each split;
 (C) grouped vs. ordinary (ungrouped) cross-validation.
 Hyper-parameters are the ones frozen in s01/s02 (no re-tuning). The ORIGINAL held-out test set is not used for any decision here."""
 import sys, os, pickle
@@ -38,15 +38,15 @@ print("Ensemble - XGBoost PR-AUC per repeat:", d.round(4).tolist(), "| mean", ro
 # ---------------- (B) many independent outer splits (frozen hyper-parameters) ----------------
 nout = 2 if QUICK else 10; rowsB = []
 for s in range(nout):
-    a, b = next(GroupShuffleSplit(1, test_size=0.2, random_state=1000 + s).split(lab, lab["y"], lab["kepid"]))
-    la, lb = lab.iloc[a], lab.iloc[b]
+    a, b = next(GroupShuffleSplit(1, test_size=0.2, random_state=1000 + s).split(tr, y, tr["kepid"]))
+    la, lb = tr.iloc[a], tr.iloc[b]
     P = {k: fit_pred(k, la[FEATS], la["y"].values, lb[FEATS]) for k in M}
     for k, (ap, r95) in metrics(lb["y"].values, P).items(): rowsB.append({"split": s, "model": k, "PR-AUC": ap, "Recall@P95": r95})
     print("outer split", s, "done", flush=True)
 B = pd.DataFrame(rowsB); B.to_csv("../results/sensitivity_outer_splits_raw.csv", index=False)
-summB = B.groupby("model")[["PR-AUC", "Recall@P95"]].agg(["mean", "std", "min", "max"]); print("\n(B) 10 independent grouped 80/20 splits\n", summB.round(4).to_string()); summB.to_csv("../results/sensitivity_outer_splits.csv")
+summB = B.groupby("model")[["PR-AUC", "Recall@P95"]].agg(["mean", "std", "min", "max"]); print("\n(B) Grouped 80/20 splits within development\n", summB.round(4).to_string()); summB.to_csv("../results/sensitivity_outer_splits.csv")
 pvB = B.pivot(index="split", columns="model", values="PR-AUC"); dB = pvB["Ensemble XGB+ResMLP"] - pvB["XGBoost"]
-print("Ensemble - XGBoost test PR-AUC per split:", dB.round(4).tolist(), "| mean", round(dB.mean(), 4), "| ensemble better in", int((dB > 0).sum()), "of", len(dB))
+print("Ensemble - XGBoost development holdout PR-AUC per split:", dB.round(4).tolist(), "| mean", round(dB.mean(), 4), "| ensemble better in", int((dB > 0).sum()), "of", len(dB))
 
 # ---------------- (C) grouped vs ungrouped CV (XGBoost, same hyper-parameters) ----------------
 ung = np.zeros(len(y)); grp = np.zeros(len(y))

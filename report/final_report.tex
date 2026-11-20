@@ -13,7 +13,7 @@
 \newcommand{\code}[1]{\texttt{\small #1}}
 
 \title{\vspace{-1cm}\textbf{Separating Exoplanets from False Positives in the Kepler Objects of Interest}\\[2pt]
-\large Leakage-free machine learning, failure analysis and ranking of unresolved candidates}
+\large Star-grouped evaluation, failure analysis and ranking of unresolved candidates}
 \author{Joe Khoury \quad Andy Sleiman \quad Anthony Merhy\\[2pt]
 CMPS 261 (Machine Learning), Track A -- American University of Beirut\\[2pt]
 Code: \url{https://github.com/AndySleiman/kepler-exoplanet-classification}}
@@ -24,7 +24,7 @@ Code: \url{https://github.com/AndySleiman/kepler-exoplanet-classification}}
 
 %--------------------------------------------------------------------
 \begin{abstract}
-NASA's Kepler telescope flagged 9,564 stars whose brightness dips might be caused by a planet (``Kepler Objects of Interest'', KOIs), but many dips are produced by eclipsing binaries, noise or a neighbouring star. We ask whether machine learning can separate confirmed planets from false positives \emph{using only measurements available before expert vetting}, so that it can help rank which detections deserve follow-up. We remove every column created during vetting (dispositions, the Robovetter score and the four false-positive flags), which would otherwise inflate PR-AUC from 0.955 to 0.998, and split the data by star so that no star appears in both training and testing. We compare logistic regression, random forest, XGBoost, a scikit-learn MLP, a PyTorch residual MLP and an XGBoost+ResMLP ensemble, tuned with 5-fold grouped cross-validation, and add five physically motivated features (for example, whether the transit depth is consistent with the planet-to-star radius ratio). On a held-out test set that was evaluated exactly once, the frozen ensemble reaches PR-AUC 0.968 (95\% CI 0.954--0.979), ROC-AUC 0.982, F1 0.926, and recovers 81\% of real planets at 95.6\% precision when the decision threshold is fixed on validation data beforehand. XGBoost alone performs equally well on test. Errors concentrate in weak signals (SNR 10--20), Earth-sized planets, and giant or grazing-transit planets that are rare in the training data. Threshold tuning, calibration, re-weighting and a weak-signal specialist did not improve ranking quality, but deferring the 7\% least certain objects to human vetters roughly halves the error rate on the rest (6.7\% to 3.9\%, validation). Finally, we score the 1,977 unresolved CANDIDATE objects and release the ranked list.
+We examine 9,564 transit detections around 8,214 stars from NASA's Kepler telescope (``Kepler Objects of Interest'', KOIs), though many dips are produced by eclipsing binaries, noise or a neighbouring star. We ask whether machine learning can separate confirmed planets from false positives \emph{using only measurements available before expert vetting}, so that it can help rank which detections deserve follow-up. We remove every column created during vetting (dispositions, the Robovetter score and the four false-positive flags), which would otherwise inflate PR-AUC from 0.955 to 0.998, and split the data by star so that no star appears in both training and testing. We compare logistic regression, random forest, XGBoost, a scikit-learn MLP, a PyTorch residual MLP and an XGBoost+ResMLP ensemble, tuned with 5-fold grouped cross-validation, and add five physically motivated features (for example, whether the transit depth is consistent with the planet-to-star radius ratio). On a held-out test set that was evaluated exactly once, the frozen ensemble reaches PR-AUC 0.968 (95\% CI 0.954--0.979), ROC-AUC 0.982, F1 0.926, and recovers 81\% of real planets at 95.6\% precision when the decision threshold is fixed on validation data beforehand. XGBoost alone performs equally well on test. Errors concentrate in weak signals (SNR 10--20), Earth-sized planets, and giant or grazing-transit planets that are rare in the training data. Threshold tuning, calibration, re-weighting and a weak-signal specialist did not improve ranking quality, but deferring the 7\% least certain objects to human vetters roughly halves the error rate on the rest (6.7\% to 3.9\%, validation). Finally, we score the 1,977 unresolved CANDIDATE objects and release the ranked list.
 \end{abstract}
 
 %--------------------------------------------------------------------
@@ -56,7 +56,7 @@ We use the Kepler Objects of Interest cumulative table from the NASA Exoplanet A
 We drop three groups of columns.
 \begin{itemize}
 \item \textbf{Vetting outputs:} \code{koi\_disposition}, \code{koi\_pdisposition} (the label itself), \code{koi\_score} (the Robovetter's confidence) and the four false-positive flags \code{koi\_fpflag\_nt/ss/co/ec} (not-transit-like, stellar eclipse, centroid offset, ephemeris match). These are set \emph{after} an object has been examined.
-\item \textbf{Identifiers and non-physical fields:} \code{kepid}, names, delivery name, transit epoch, sky position.
+\item \textbf{Identifiers and non-physical fields:} \code{kepid}, names, delivery name, transit epoch, and sky position.
 \item \textbf{Process signals:} the planet number within the system and the number of KOIs per star, and missing-value indicators. They describe \emph{how} an object was processed rather than its physics: 64\% of objects on multi-KOI stars are confirmed versus 18\% on single-KOI stars, because multi-planet systems are validated statistically in bulk. We also do not use the measurement-uncertainty columns.
 \end{itemize}
 The remaining 12 features are \code{koi\_period}, \code{koi\_duration}, \code{koi\_depth}, \code{koi\_impact}, \code{koi\_model\_snr}, \code{koi\_prad}, \code{koi\_teq}, \code{koi\_insol}, \code{koi\_steff}, \code{koi\_slogg}, \code{koi\_srad}, \code{koi\_kepmag}.
@@ -107,9 +107,9 @@ All models are tuned to maximise PR-AUC (average precision) with the same 5 grou
 \item[MLP (scikit-learn)] (20 configurations, early stopping). A neural baseline that can learn smooth joint boundaries such as ``a planet-sized depth on a large star''.
 \item[PyTorch residual MLP] (10 configurations, then a 5-seed ensemble). A stronger network than the baseline MLP: residual blocks with LayerNorm and SiLU, dropout, AdamW with weight decay \citep{loshchilov2019}, a one-cycle learning-rate schedule \citep{smith2019} and a fixed epoch budget (so the validation fold is never used for early stopping). Selected: width 64, one block, dropout 0.3, learning rate $10^{-2}$, weight decay $10^{-4}$, 40 epochs; implemented in PyTorch \citep{paszke2019}.
 \item[Ensemble] The equal-weight average of the XGBoost and ResMLP probabilities. Trees and networks make partly different mistakes, so averaging can reduce variance.
-\item[TabPFN (not evaluated).] We planned to test the pre-trained tabular foundation model TabPFN \citep{hollmann2025}. Its weights are gated and could not be downloaded in our compute environment, so \textbf{no TabPFN results are reported}; the script \code{final/run\_tabpfn\_colab.py} is included to run it with the same folds.
+\item[TabPFN (not evaluated).] We planned to test the pre-trained tabular foundation model TabPFN \citep{hollmann2025}. Its weights are gated and could not be downloaded in our compute environment, so \textbf{no TabPFN results are reported}; the script \path{final/run_tabpfn_colab.py} is included to run it with the same folds.
 \end{description}
-Models are implemented with scikit-learn \citep{pedregosa2011}. All code is in one notebook (\code{notebooks/kepler\_final\_notebook.ipynb}) and in the repository, which also contains the trained models for download. \textbf{Model selection rule (fixed before touching the test set):} the primary model is the one with the highest validation PR-AUC.
+Models are implemented with scikit-learn \citep{pedregosa2011}. The complete notebook, \path{notebooks/kepler_final_notebook.ipynb}, and trained models are available in the repository. \textbf{Model selection rule (fixed before touching the test set):} the primary model is the one with the highest validation PR-AUC.
 
 %--------------------------------------------------------------------
 \section{Results}
@@ -142,8 +142,8 @@ PyTorch ResMLP + new features & 0.959 & 0.736 & 0.052 & 0.963 & 0.796 & 0.051\\
 Observations.
 \begin{itemize}
 \item \textbf{Non-linear models are essential:} logistic regression is $\approx 0.2$ PR-AUC behind and cannot reach 95\% precision at all on validation.
-\item \textbf{The new features help consistently on validation} (+0.010 logistic regression, +0.012 random forest, +0.006 XGBoost, +0.003 sklearn MLP) and on test for three of four families; the exception is the sklearn MLP, which is lower on test (0.955 vs.\ 0.964), a reminder that single-split differences of $\sim$0.01 are within noise (the test bootstrap interval is $\pm 0.012$).
-\item \textbf{The ensemble is best on validation (0.965) but ties XGBoost on test (0.968 for both).} The primary model was frozen on validation, so we report it as primary, but the honest conclusion is that XGBoost with the new features is as good and much simpler.
+\item \textbf{The new features help consistently on validation} (+0.010 logistic regression, +0.012 random forest, +0.006 XGBoost, +0.003 sklearn MLP) and on test for three of four families; the exception is the sklearn MLP, which is lower on test (0.955 vs.\ 0.964), an example of how the observed effect can differ across partitions.
+\item \textbf{The ensemble is best on validation (0.965) but ties XGBoost on test (0.968 for both).} We retained the validation-selected ensemble as the primary model. The near-identical test scores and lower computational cost favor XGBoost as the practical recommendation.
 \end{itemize}
 
 \subsection{Primary model on the held-out test set}
@@ -164,6 +164,9 @@ The 95\%-precision threshold chosen on validation transfers well: it gives 95.6\
 \includegraphics[width=0.45\linewidth]{fig_test_pr_curve.png}
 \caption{Precision--recall curve of the primary model on the test set.}\label{fig:prc}
 \end{figure}
+
+\subsection{Reproduction on a fresh kernel}
+The main tables and figures retain the original project run. We repeated the notebook under Python 3.12 using the repository data snapshot and the same grouped split and tuning spaces. The rerun again selected the ensemble on development data (average precision 0.9648, versus 0.9651 originally). Test average precision was 0.9680 for XGBoost and 0.9695 for the ensemble, versus 0.9682 for both models to four decimal places in the original run. The XGBoost search selected different hyperparameters in the rerun, so this is a reproduction of the workflow and its broad conclusion. The pinned package versions describe the rerun environment. The sensitivity experiments below use the settings selected in the rerun.
 
 \subsection{Feature importance (SHAP)}
 We computed TreeSHAP values \citep{lundberg2017,lundberg2020} for the XGBoost model (Figure~\ref{fig:shap}). By mean $|$SHAP$|$ (log-odds) the most important features are planet radius (1.14), stellar density (0.82, new), SNR (0.71) and period (0.62), followed by the new \code{depth\_consistency} and \code{duration\_ratio} (both 0.35). Large planet radii, high stellar density and low SNR push predictions strongly towards FALSE POSITIVE. Permuting the 12 raw inputs agrees on the top of the ranking (radius, period, SNR, duration cause the biggest PR-AUC drops; $0.20$, $0.13$, $0.10$, $0.10$). Two of the five new features are among the six most important, which is consistent with their measured gain.
@@ -212,7 +215,7 @@ Ensemble XGB + ResMLP & black box & 0.965 & 0.796\\\bottomrule
 \end{tabular}
 \caption{Cost of interpretability: a human-readable rule set is far worse than the boosted models.}\label{tab:interp}
 \end{table}
-A rule set small enough to read (a depth-3 tree) reaches only PR-AUC 0.70, and even 256 leaves reach 0.89, so no \emph{simple} model is competitive: the signal lives in interactions between radius, SNR, period and stellar density. The useful form of interpretability is post-hoc explanation of a boosted model: eight features (about half of the inputs) already retain 99\% of the full XGBoost PR-AUC (0.955 vs.\ 0.961), which is a cheap way to simplify a deployed system.
+A rule set small enough to read (a depth-3 tree) reaches only PR-AUC 0.70, and even 256 leaves reach 0.89, so no \emph{simple} model is competitive: the signal lives in interactions between radius, SNR, period and stellar density. The useful form of interpretability is post-hoc explanation of a boosted model: eight features (about half of the inputs) already retain 99\% of the full XGBoost PR-AUC (0.955 vs.\ 0.961), in the exploratory comparison. We selected the SHAP features and fitted the imputer across the full development partition before cross-validation. This lets information from validation folds influence the comparison and can make the reduced model look better than it would on independent data. A deployment decision would require fold-specific feature selection and preprocessing.
 
 \subsection{Failure analysis}\label{sec:fail}
 We analyse out-of-fold validation predictions of the primary model at threshold 0.5: 403 errors on 6,041 objects (6.7\%), of which 218 are false alarms and 185 missed planets.
@@ -230,12 +233,12 @@ We analyse out-of-fold validation predictions of the primary model at threshold 
 
 \textbf{Missing measurements.} The 205 objects with a missing value are 1\% planets (PR-AUC 0.08) and the model labels nearly all of them as false positives. This is correct statistically but reflects the catalogue's processing rather than physics. On the test set, all 55 such objects are false positives and none is misclassified.
 
-\textbf{False alarms that look like planets.} The median false alarm has radius 1.7 $R_\oplus$, SNR 20 and period 8.5 d, close to the median missed planet (1.7 $R_\oplus$, SNR 17, 5.9 d) and unlike rejected false positives (15 $R_\oplus$, SNR 37). The most confident false alarm, K02050.01 ($p = 0.99$; 1.6 $R_\oplus$, SNR 30, period 75 d), is pushed towards ``planet'' by SHAP through its radius, SNR, radius ratio and stellar density, i.e.\ by exactly the features that describe a convincing small transit. Eclipsing-binary and background-star signals that mimic a planet cannot be distinguished using only catalogue measurements; vetting uses extra information such as centroid motion and odd/even depth differences that is not in this table. Short periods ($<3$ d) are also harder (PR-AUC 0.84).
+\textbf{False alarms that look like planets.} The median false alarm has radius 1.7 $R_\oplus$, SNR 20 and period 8.5 d, close to the median missed planet (1.7 $R_\oplus$, SNR 17, 5.9 d) and unlike rejected false positives (15 $R_\oplus$, SNR 37). The most confident false alarm, K02050.01 ($p = 0.99$; 1.6 $R_\oplus$, SNR 30, period 75 d), has strong XGBoost SHAP contributions from radius, SNR, radius ratio and stellar density in a separate in-sample explanation. Those attributions describe the fitted XGBoost component, whereas the error and probability come from the out-of-fold ensemble. Eclipsing-binary and background-star signals that mimic a planet cannot be distinguished using only catalogue measurements; vetting uses extra information such as centroid motion and odd/even depth differences that is not in this table. Short periods ($<3$ d) are also harder (PR-AUC 0.84).
 
 \textbf{On the test set} the same pattern appears: SNR 10--20 has the highest error rate (10.1\%), followed by small planets (8.5--9.2\%), while errors for SNR $>50$ are only 2.1\%.
 
 \subsection{Attempted fixes}\label{sec:fixes}
-We tested three standard fixes on validation data. Post-hoc corrections (threshold, calibration) were cross-fitted on out-of-fold predictions to avoid leakage; re-weighting retrains XGBoost with the same hyper-parameters.
+We tested three standard fixes on validation data. We evaluated the threshold and calibration corrections using a shared pool of out-of-fold predictions. The predictions used to fit a correction can come from base models trained on labels in the fold being evaluated. We therefore treat the correction comparison as exploratory. An independent estimate would generate the calibration predictions entirely inside each outer training fold. Re-weighting retrains XGBoost with the same hyper-parameters.
 
 \begin{table}[H]\centering\footnotesize
 \begin{tabular}{@{}lcccccc@{}}\toprule
@@ -252,15 +255,15 @@ Re-weight by inverse class frequency & 0.960 & 0.762 & 0.0519 & 0.0170 & 0.906 &
 \end{table}
 
 \begin{itemize}
-\item \textbf{Calibration (can the confidence be trusted?):} yes. The ensemble's reliability curve lies on the diagonal (Figure~\ref{fig:calib}; ECE 0.0036, Brier 0.049), so Platt scaling changes nothing and isotonic regression lowers ECE slightly (0.0029) at a small cost in PR-AUC.
-\item \textbf{Thresholds:} the F1-optimal threshold (0.40) removes 7 of 403 validation errors and gives +0.003 F1; on test it gives F1 0.929 vs.\ 0.926. These are within noise. The precision-target threshold is useful operationally (Table~\ref{tab:thr}) because it makes the false-alarm budget explicit.
+\item \textbf{Calibration:} The ensemble's aggregate reliability curve is close to the diagonal on development data (Figure~\ref{fig:calib}; ECE 0.0036, Brier 0.049), so Platt scaling changes nothing and isotonic regression lowers ECE slightly (0.0029) at a small cost in PR-AUC.
+\item \textbf{Thresholds:} the F1-optimal threshold (0.40) removes 7 of 403 validation errors and gives +0.003 F1; on test it gives F1 0.929 vs.\ 0.926. We did not estimate uncertainty for this paired difference. The precision-target threshold is useful operationally (Table~\ref{tab:thr}) because it makes the false-alarm budget explicit.
 \item \textbf{Re-weighting} lowers PR-AUC and recall at 95\% precision in every variant and does \emph{not} reduce errors in the SNR 10--20 group (12.5\% $\to$ 12.4--12.6\%). Its only visible ``gain'' (errors in the missing-value group 2.9\% $\to$ 1.0\%) is a trivial effect of predicting ``false positive'' for nearly all of those objects.
 \end{itemize}
 \begin{figure}[H]\centering
 \includegraphics[width=0.42\linewidth]{fig_calibration_fix.png}
 \caption{Reliability curve of the primary model (validation, out-of-fold), before and after Platt/isotonic correction.}\label{fig:calib}
 \end{figure}
-We therefore adopt \emph{none} of these model-side fixes for the primary model (a mitigation that does work is deferral, Sec.~\ref{sec:defer}). The errors are due to genuinely ambiguous signals, not a miscalibrated or biased training objective; improving them needs new information (such as light-curve or centroid features), not re-weighting.
+We therefore adopt \emph{none} of these model-side fixes for the primary model (a mitigation that does work is deferral, Sec.~\ref{sec:defer}). The remaining errors are consistent with ambiguous signals. Light-curve shape and centroid features could help distinguish cases where these corrections produced little improvement.
 
 \subsection{Mitigations that work: deferring uncertain objects}\label{sec:defer}
 Because the remaining errors come from ambiguous signals, a practical mitigation is \emph{selective prediction}: the model decides only when it is confident and sends objects with probability within a band around 0.5 to human vetters. We also tried a \emph{weak-signal specialist} (an XGBoost trained only on SNR $<30$, averaged with the global model). Both were evaluated on validation out-of-fold predictions only; the test set was not used again.
@@ -278,6 +281,20 @@ Defer if $|p-0.5|<$ & objects deferred & coverage & error on decided & SNR 10--2
 \end{table}
 Deferring the 7\% least certain objects (band 0.20) removes 184 of 403 errors, halves the error rate on the decided objects (6.7\% $\to$ 3.9\%) and cuts the error rate in the hardest group (SNR 10--20) from 12.4\% to 7.6\%, while still deciding 87\% of the weak-signal objects automatically. The weak-signal specialist, in contrast, changes almost nothing (395 vs.\ 403 errors, SNR 10--20 error 12.0\% vs.\ 12.4\%) and slightly lowers PR-AUC (0.964 vs.\ 0.965), so we do not adopt it. The remaining systematic failures (rare giants, grazing transits and planet-mimicking false positives) need new information rather than a different training objective. These deferral results are validation-only evidence; the band should be re-checked on fresh data before deployment.
 
+\subsection{Sensitivity to the split and evaluation design}\label{sec:sensitivity}
+We kept the original held-out test partition separate from this analysis. The models use the hyperparameters chosen on development data. We repeated stratified, star-grouped five-fold cross-validation with five fold seeds. We also evaluated ten alternative star-grouped 80/20 splits of the development partition. Each split gives a paired comparison on the same objects.
+
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}lrrr@{}}\toprule
+Development evaluation & XGBoost & Ensemble & Ensemble minus XGBoost \\\midrule
+Repeated grouped CV & 0.9615 & 0.9650 & +0.0035 \\
+Alternative grouped holdouts & 0.9594 & 0.9641 & +0.0047 \\\bottomrule
+\end{tabular}
+\caption{Mean average precision under alternative splits of the development partition.}\label{tab:sensitivity}
+\end{table}
+
+Across the five CV repetitions, the paired differences ranged from +0.0024 to +0.0042, with the ensemble ahead in 5 of 5. Across the ten alternative holdouts, the differences ranged from +0.0017 to +0.0095, with the ensemble ahead in 10 of 10. These repeated splits reuse objects, so the spread describes sensitivity and should not be treated as a confidence interval. On the original development partition, XGBoost averaged 0.9625 AP under row-wise cross-validation and 0.9607 under star-grouped cross-validation. We retain grouping because it tests generalization to unseen stars.
+
 \subsection{Ranking the unresolved CANDIDATE objects}\label{sec:cand}
 After the test evaluation we refit XGBoost and the ResMLP on all 7,587 labelled objects (frozen hyper-parameters) and scored the 1,977 CANDIDATE objects; the full ranked list is released as \code{results/candidate\_ranking.csv}.
 
@@ -293,14 +310,14 @@ The distribution is bimodal: 886 candidates score below 0.1, 562 score at least 
 
 \textbf{Limitations}\label{sec:limits}
 \begin{itemize}
-\item A single grouped split with 1,546 test objects gives wide intervals (e.g.\ recall at 95\% precision: 0.73--0.92), so differences of about 0.01 PR-AUC between models are not significant. The ensemble's validation advantage did not reproduce on test.
+\item The held-out results come from one grouped split with 1,546 objects. The bootstrap intervals describe the primary model on that split. We did not estimate an interval for the paired PR-AUC difference. Development scores were also used to select hyperparameters, so their absolute values may be optimistic.
 \item Median imputation does not fully hide the strong association between missing values and false-positive status, which is a processing artefact; 3.4\% of objects are affected.
 \item The ``labels'' (CONFIRMED vs.\ FALSE POSITIVE) come from a vetting process with its own biases, and dispositions in the archive change over time.
 \item The TabPFN experiment could not be run (gated weights), and the PyTorch search used only 10 configurations. Deferral and the specialist model were evaluated on validation data only. Interpretability is measured through surrogate/compact models, not with a user study; timings are from a 2-core CPU.
 \item Candidate scores have no ground truth and should not be read as confirmations.
 \end{itemize}
 
-\textbf{Future work.} (i) Add information that human vetters use but the catalogue lacks: light-curve shape, odd/even depth differences and centroid shifts; (ii) test TabPFN and gradient-boosting variants under the same protocol; (iii) use repeated grouped splits for tighter confidence intervals; (iv) treat the problem as a ranking task with an explicit follow-up budget; (v) examine the confident mistakes (hot Jupiters and grazing planets) with domain experts, and consider a dedicated model for rare planet classes; (vi) track how the candidate ranking compares with future dispositions as the archive is updated.
+\textbf{Future work.} (i) Add information that human vetters use but the catalogue lacks: light-curve shape, odd/even depth differences and centroid shifts; (ii) test TabPFN and gradient-boosting variants under the same protocol; (iii) evaluate on a separate catalogue or later snapshot; (iv) treat the problem as a ranking task with an explicit follow-up budget; (v) examine the confident mistakes (hot Jupiters and grazing planets) with domain experts, and consider a dedicated model for rare planet classes; (vi) track how the candidate ranking compares with future dispositions as the archive is updated.
 
 %--------------------------------------------------------------------
 \begin{thebibliography}{99}\small

@@ -69,7 +69,7 @@ conf.head(30).to_csv("../results/most_confident_errors.csv", index=False)
 
 # ------------------------------------------------------------------ 3. fixes (all evaluated on validation folds only)
 def cross_fit(fn, p):
-    """Fit a post-hoc correction on 4 grouped folds of out-of-fold predictions, apply to the 5th (no leakage)."""
+    """Exploratory correction using a shared OOF pool; base fits can include the target fold."""
     out = np.zeros_like(p)
     for a, b in splits:
         out[b] = fn(p[a], y[a], p[b])

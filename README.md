@@ -33,7 +33,7 @@ Full report: `report/final_report.pdf` (source: `report/final_report.tex`). Rank
 ## Repository structure
 ```
 ├── notebooks/kepler_project.ipynb   progress-report notebook (baseline experiments)
-├── notebooks/kepler_final.ipynb     final results (tables and figures from the saved runs)
+├── notebooks/kepler_final_notebook.ipynb  complete final experiment notebook
 ├── final/                           final experiments: common.py, s01..s05 scripts, torch_model.py, run_all.sh
 ├── report/                          final_report.tex / final_report.pdf
 ├── data/README.md                   how to download the dataset (kepler_cumulative.csv is included)
@@ -44,12 +44,23 @@ Full report: `report/final_report.pdf` (source: `report/final_report.tex`). Rank
 ```
 
 ## How to run
+
+The reproduction was configured for Python 3.12. On macOS, XGBoost also needs the OpenMP runtime available to the Python process. Run these commands from the repository root.
+
 ```bash
 pip install -r requirements.txt
-cd final && bash run_all.sh        # ~25-30 min on 2 CPU cores; writes results/ and figures
-cd .. && python predict.py data/kepler_cumulative.csv
+bash final/run_all.sh                     # writes results/, figures and model files
+python predict.py data/kepler_cumulative.csv
 ```
-The held-out test set is only touched in `final/s04_test_and_candidates.py`, after the model, features and thresholds are frozen (`results/frozen_config.json`).
+The main held-out scores use the frozen configuration in `results/frozen_config.json`. The split sensitivity analysis uses only the development partition. The final downloadable models are refitted on all labeled rows after the main evaluation for candidate scoring.
+
+For the notebook, open `notebooks/kepler_final_notebook.ipynb` in a Python kernel with these dependencies and run from the `notebooks/` directory.
+
+## Reproduction results
+
+The README table, the report's main results, and the downloadable models are from the original project run. The executed final notebook is a separate fresh-kernel rerun. It selected the same primary model family but a different XGBoost configuration. Its test average precision was 0.9680 for XGBoost and 0.9695 for the ensemble. Changed rerun files are saved under `results/reproduction/`. The development-only sensitivity tables are in `results/sensitivity_*.csv`.
+
+The compact-feature and calibration-correction results are exploratory. The report describes the sources of dependence in those comparisons and how to obtain an independent estimate.
 
 ## Status
 - [x] Proposal and initial baseline (Oct 7)

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Re-runs every final experiment (about 25-30 min on 2 CPU cores). Run from inside final/.
-set -e
+# Re-runs every final experiment (runtime depends on the machine).
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+mkdir -p cache
 python s01_tune_classical.py      # LR / RF / XGBoost / sklearn-MLP, base vs +new features (validation only)
 python s02_torch.py               # PyTorch residual MLP (validation only)
 python s03_analysis.py            # model selection, failure analysis, failure fixes, SHAP, complexity (validation only)
